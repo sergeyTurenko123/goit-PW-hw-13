@@ -22,7 +22,7 @@ async def read_users(birthdays: bool, skip: int = 0, limit: int = 100, db: Sessi
         return users_all
 
 @router.get("/{contact_id}", response_model=ContactResponse)
-async def read_user(contact_id: int, db: Session = Depends(get_db),
+async def read_contact(contact_id: int, db: Session = Depends(get_db),
                     current_user: User = Depends(auth_service.get_current_user)):
     user = await repository_users.get_contact(contact_id, current_user, db)
     if user is None:
@@ -30,7 +30,7 @@ async def read_user(contact_id: int, db: Session = Depends(get_db),
     return user
 
 @router.get("/contact/", response_model=ContactResponse)
-async def read_user(name: str| None=None, surname:  str| None=None, email_address: str| None=None,
+async def read_contact(name: str| None=None, surname:  str| None=None, email_address: str| None=None,
                      phone_number: str| None=None, db: Session = Depends(get_db),
                      current_user: User = Depends(auth_service.get_current_user)):
     user = await repository_users.get_contact_name(name, surname, email_address, phone_number,
@@ -40,13 +40,13 @@ async def read_user(name: str| None=None, surname:  str| None=None, email_addres
     return user
 
 @router.post("/", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(body: ContactBase, db: Session = Depends(get_db),
+async def create_contact(body: ContactBase, db: Session = Depends(get_db),
                       current_user: User = Depends(auth_service.get_current_user)):
     return await repository_users.create_contact(body, current_user, db)
 
 
-@router.put("/{user_id}", response_model=ContactResponse)
-async def update_user(body: ContactBase, user_id: int, db: Session = Depends(get_db),
+@router.put("/{contact_id}", response_model=ContactResponse)
+async def update_contact(body: ContactBase, user_id: int, db: Session = Depends(get_db),
                       current_user: User = Depends(auth_service.get_current_user)):
     user = await repository_users.update_contact(user_id, body, current_user, db)
     if user is None:
@@ -54,8 +54,8 @@ async def update_user(body: ContactBase, user_id: int, db: Session = Depends(get
     return user
 
 
-@router.patch("/{user_id}", response_model=ContactResponse)
-async def update_status_user(body: ContactStatusUpdate, user_id: int, db: Session = Depends(get_db),
+@router.patch("/{contact_id}", response_model=ContactResponse)
+async def update_status_contact(body: ContactStatusUpdate, user_id: int, db: Session = Depends(get_db),
                              current_user: User = Depends(auth_service.get_current_user)):
     user = await repository_users.update_status_user(user_id, body, current_user, db)
     if user is None:

@@ -1,6 +1,7 @@
 from typing import List
-
-from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from src.services.email import send_email
@@ -72,3 +73,10 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
     if user:
         background_tasks.add_task(send_email, user.email, user.username, request.base_url)
     return {"message": "Check your email for confirmation."}
+
+@router.get('/{usermame}')
+async def request_email(username:str, response: Response, db:AsyncSession=Depends(get_db)):
+    print('_________________________')
+    print(f'{username}')
+    print('___________________')
+    return FileResponse("src/static/1x1-fafafa7f.png", media_type="image/png", content_disposition_type="inline")
