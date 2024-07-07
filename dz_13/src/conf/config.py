@@ -3,14 +3,14 @@ from pydantic import ConfigDict, field_validator, EmailStr
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    DB_URL: str = "postgresql+psycopg2://postgres:11111111@localhost:5432/postgres"
-    SECRET_KEY_JWT: str = "secret_key"
+    DB_URL: str = "postgresql+psycopg2://postgres:11111111@localhost:postgres/postgres"
+    SECRET_KEY_JWT: str = "postgress"
     ALGORITHM: str = "HS256"
-    MAIL_USERNAME: EmailStr = "robota_test@meta.ua"
-    MAIL_PASSWORD: str = "21061984Polina"
-    MAIL_FROM: str = "robota_test@meta.ua"
+    MAIL_USERNAME: EmailStr = "postgress"
+    MAIL_PASSWORD: str = "postgress"
+    MAIL_FROM: str = "postgress"
     MAIL_PORT: int = 465
-    MAIL_SERVER: str = "smtp.meta.ua"
+    MAIL_SERVER: str = "postgress"
     REDIS_DOMAIN: str = 'localhost'
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: str | None = None
