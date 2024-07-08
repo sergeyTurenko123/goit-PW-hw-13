@@ -33,10 +33,10 @@ async def confirmed_email(email: str, db: Session) -> None:
     user.confirmed = True
     db.commit()
 
-async def get_contacts(skip: int, limit: int, user: User, db: Session) -> List[Contact]:
+async def get_contacts(skip: int, limit: int, user: User, db: Session,) -> List[Contact]:
     return db.query(Contact).filter(Contact.user_id==user.id).offset(skip).limit(limit).all()
 
-async def get_contacts_birthdays(skip: int, limit: int, user: User, db: Session) -> List[Contact]:
+async def get_contacts_birthdays(skip: int, limit: int, user: User, db: Session,) -> List[Contact]:
     users = db.query(Contact).filter(Contact.user_id==user.id).offset(skip).limit(limit).all()
     now = dtdt.today().date()
     birthdays = []
@@ -44,7 +44,7 @@ async def get_contacts_birthdays(skip: int, limit: int, user: User, db: Session)
         date_user = user.date_of_birth
         week_day = date_user.isoweekday()
         difference_day = (date_user.day - now.day)
-        if 1 <= difference_day < 7 :
+        if 0 <= difference_day < 7 :
             if difference_day < 6 :
                 birthdays.append(user)
             else:

@@ -1,7 +1,19 @@
-from fastapi import FastAPI
+import re
+from ipaddress import ip_address
+from typing import Callable
+from pathlib import Path
+
+import redis.asyncio as redis
+from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import users, auth
 from fastapi.staticfiles import StaticFiles
+from fastapi_limiter import FastAPILimiter
+from sqlalchemy import text
+
+from src.routes import auth, users, contacts
+from src.conf.config import config
 
 app = FastAPI()
 
@@ -19,8 +31,23 @@ app.mount("/static", StaticFiles(directory='src/static'), name="static")
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
+app.include_router(contacts.router, prefix='/api')
 
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}
+@app.on_event("startup")
+async def startup():
+    r = await redis.Redis(
+        host=config.REDIS_DOMAIN,
+        port=config.REDIS_PORT,
+        db=0,
+        password=config.REDIS_PASSWORD,
+    )
+    await FastAPILimiter.init(r)
+
+templates = Jinja2Templates(directory='src/templates')
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "our": "Build group WebPython"}
+    )
 

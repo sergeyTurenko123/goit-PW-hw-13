@@ -1,72 +1,37 @@
-from typing import List
-
-from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from src.database.db import get_db
+from fastapi import APIRouter, Depends
 from src.database.models import User
-from src.schemas import ContactBase, ContactStatusUpdate, ContactResponse
-from src.repository import users as repository_users
+from src.schemas import UserDb
 from src.services.auth import auth_service
 
-router = APIRouter(prefix='/users')
+router = APIRouter(prefix='/users', tags=['users'])
+cloudinary.config(
+    cloud_name=config.CLD_NAME,
+    api_key=config.CLD_API_KEY,
+    api_secret=config.CLD_API_SECRET,
+    secure=True,
+)
 
-@router.get("/",  response_model=List[ContactResponse])
-async def read_users(birthdays: bool, skip: int = 0, limit: int = 100, db: Session = Depends(get_db),
-                     current_user: User = Depends(auth_service.get_current_user)):
-    users_birthdays = await repository_users.get_contacts_birthdays(skip, limit, current_user, db)
-    users_all = await repository_users.get_contacts(skip, limit, current_user, db)
-    if birthdays:
-        return users_birthdays
-    else:
-        return users_all
-
-@router.get("/{contact_id}", response_model=ContactResponse)
-async def read_contact(contact_id: int, db: Session = Depends(get_db),
-                    current_user: User = Depends(auth_service.get_current_user)):
-    user = await repository_users.get_contact(contact_id, current_user, db)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+@router.get("/me",  response_model=UserDb)
+async def get_current_user(user: User = Depends(auth_service.get_current_user)):
     return user
 
-@router.get("/contact/", response_model=ContactResponse)
-async def read_contact(name: str| None=None, surname:  str| None=None, email_address: str| None=None,
-                     phone_number: str| None=None, db: Session = Depends(get_db),
-                     current_user: User = Depends(auth_service.get_current_user)):
-    user = await repository_users.get_contact_name(name, surname, email_address, phone_number,
-                                                current_user, db)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
-
-@router.post("/", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
-async def create_contact(body: ContactBase, db: Session = Depends(get_db),
-                      current_user: User = Depends(auth_service.get_current_user)):
-    return await repository_users.create_contact(body, current_user, db)
-
-
-@router.put("/{contact_id}", response_model=ContactResponse)
-async def update_contact(body: ContactBase, user_id: int, db: Session = Depends(get_db),
-                      current_user: User = Depends(auth_service.get_current_user)):
-    user = await repository_users.update_contact(user_id, body, current_user, db)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
-
-
-@router.patch("/{contact_id}", response_model=ContactResponse)
-async def update_status_contact(body: ContactStatusUpdate, user_id: int, db: Session = Depends(get_db),
-                             current_user: User = Depends(auth_service.get_current_user)):
-    user = await repository_users.update_status_user(user_id, body, current_user, db)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
-
-
-@router.delete("/{user_id}", response_model=ContactResponse)
-async def remove_user(user_id: int, db: Session = Depends(get_db),
-                      current_user: User = Depends(auth_service.get_current_user)):
-    user = await repository_users.remove_user(user_id, current_user, db)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+@router.patch(
+    "/avatar",
+    response_model=UserResponse,
+    dependencies=[Depends(RateLimiter(times=1, seconds=20))],
+)
+async def get_current_user(
+    file: UploadFile = File(),
+    user: User = Depends(auth_service.get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    public_id = f"Web16/{user.email}"
+    res = cloudinary.uploader.upload(file.file, public_id=public_id, owerite=True)
+    print(res)
+    res_url = cloudinary.CloudinaryImage(public_id).build_url(
+        width=250, height=250, crop="fill", version=res.get("version")
+    )
+    user = await repositories_users.update_avatar_url(user.email, res_url, db)
+    auth_service.cache.set(user.email, pickle.dumps(user))
+    auth_service.cache.expire(user.email, 300)
     return user
