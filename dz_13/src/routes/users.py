@@ -1,37 +1,35 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status, UploadFile, File
+from sqlalchemy.orm import Session
+import cloudinary
+import cloudinary.uploader
+
+from src.database.db import get_db
 from src.database.models import User
-from src.schemas import UserDb
+from src.repository import users as repository_users
 from src.services.auth import auth_service
+from src.conf.config import config
+from src.schemas import UserDb
 
-router = APIRouter(prefix='/users', tags=['users'])
-cloudinary.config(
-    cloud_name=config.CLD_NAME,
-    api_key=config.CLD_API_KEY,
-    api_secret=config.CLD_API_SECRET,
-    secure=True,
-)
+router = APIRouter(prefix="/users", tags=["users"])
 
-@router.get("/me",  response_model=UserDb)
-async def get_current_user(user: User = Depends(auth_service.get_current_user)):
+
+@router.get("/me/", response_model=UserDb)
+async def read_users_me(user: User = Depends(auth_service.get_current_user)):
     return user
 
-@router.patch(
-    "/avatar",
-    response_model=UserResponse,
-    dependencies=[Depends(RateLimiter(times=1, seconds=20))],
-)
-async def get_current_user(
-    file: UploadFile = File(),
-    user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    public_id = f"Web16/{user.email}"
-    res = cloudinary.uploader.upload(file.file, public_id=public_id, owerite=True)
-    print(res)
-    res_url = cloudinary.CloudinaryImage(public_id).build_url(
-        width=250, height=250, crop="fill", version=res.get("version")
+
+@router.patch('/avatar', response_model=UserDb)
+async def update_avatar_user(file: UploadFile = File(), user: User = Depends(auth_service.get_current_user),
+                             db: Session = Depends(get_db)):
+    cloudinary.config(
+        cloud_name=config.CLD_NAME,
+        api_key=config.CLD_API_KEY,
+        api_secret=config.CLD_API_SECRET,
+        secure=True
     )
-    user = await repositories_users.update_avatar_url(user.email, res_url, db)
-    auth_service.cache.set(user.email, pickle.dumps(user))
-    auth_service.cache.expire(user.email, 300)
+
+    r = cloudinary.uploader.upload(file.file, public_id=f'NotesApp/{user.username}', overwrite=True)
+    src_url = cloudinary.CloudinaryImage(f'NotesApp/{user.username}')\
+                        .build_url(width=250, height=250, crop='fill', version=r.get('version'))
+    user = await repository_users.update_avatar(user.email, src_url, db)
     return user

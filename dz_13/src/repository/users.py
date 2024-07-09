@@ -1,6 +1,7 @@
 from typing import List
 from libgravatar import Gravatar
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import User, Contact
 from src.schemas import ContactBase, ContactStatusUpdate, UserModel
@@ -9,6 +10,11 @@ from datetime import datetime  as dtdt
 async def get_user_by_email(email: str, db: Session) -> User:
     return db.query(User).filter(User.email == email).first()
 
+async def update_avatar(email: str, url: str | None, db: AsyncSession) -> User:
+    user = await get_user_by_email(email, db)
+    user.avatar = url
+    db.commit()
+    return user
 
 async def create_user(body: UserModel, db: Session) -> User:
     avatar = None

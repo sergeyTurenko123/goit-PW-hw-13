@@ -33,6 +33,7 @@ app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(contacts.router, prefix='/api')
 
+
 @app.on_event("startup")
 async def startup():
     r = await redis.Redis(
