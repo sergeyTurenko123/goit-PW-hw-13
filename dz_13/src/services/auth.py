@@ -53,10 +53,10 @@ class Auth:
         """
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+            expire = datetime.now() + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.utcnow() + timedelta(minutes=15)
-        to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "access_token"})
+            expire = datetime.now() + timedelta(minutes=15)
+        to_encode.update({"iat": datetime.now(), "exp": expire, "scope": "access_token"})
         encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_access_token
 
@@ -71,10 +71,10 @@ class Auth:
         """
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+            expire = datetime.now() + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.utcnow() + timedelta(days=7)
-        to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "refresh_token"})
+            expire = datetime.now() + timedelta(days=7)
+        to_encode.update({"iat": datetime.now(), "exp": expire, "scope": "refresh_token"})
         encoded_refresh_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_refresh_token
 
@@ -131,8 +131,8 @@ class Auth:
         :type: dict
         """
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(days=1)
-        to_encode.update({"iat": datetime.utcnow(), "exp": expire})
+        expire = datetime.now() + timedelta(days=1)
+        to_encode.update({"iat": datetime.now(), "exp": expire})
         token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return token
     

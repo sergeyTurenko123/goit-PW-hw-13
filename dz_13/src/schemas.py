@@ -17,7 +17,7 @@ class ContactResponse(ContactBase):
     id: int
     created_at: datetime
 
-    class Config:
+    class ConfigDict:
         orm_mode = True
 
 class UserModel(BaseModel):
@@ -33,7 +33,7 @@ class UserDb(BaseModel):
     created_at: datetime
     avatar: str
 
-    class Config:
+    class ConfigDict:
         orm_mode = True
 
 

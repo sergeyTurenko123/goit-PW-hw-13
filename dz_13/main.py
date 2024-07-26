@@ -1,16 +1,12 @@
-import re
 from ipaddress import ip_address
-from typing import Callable
-from pathlib import Path
-
+from contextlib import asynccontextmanager
 import redis.asyncio as redis
-from fastapi import FastAPI, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi import FastAPI,  Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi_limiter import FastAPILimiter
-from sqlalchemy import text
 
 from src.routes import auth, users, contacts
 from src.conf.config import config
@@ -35,6 +31,7 @@ app.include_router(contacts.router, prefix='/api')
 
 
 @app.on_event("startup")
+# @asynccontextmanager
 async def startup():
     r = await redis.Redis(
         host=config.REDIS_DOMAIN,

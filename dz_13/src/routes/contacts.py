@@ -12,7 +12,8 @@ from fastapi_limiter.depends import RateLimiter
 
 router = APIRouter(prefix='/contacts')
 
-@router.get("/",  response_model=List[ContactResponse], dependencies=[Depends(RateLimiter(times=1, seconds=20))])
+@router.get("/",  response_model=List[ContactResponse], description="No more than 10 requests per minute", 
+            dependencies=[Depends(RateLimiter(times=10, seconds=60))],)
 async def read_contacts(birthdays: bool, skip: int = 0, limit: int = 100, db: Session = Depends(get_db),
                      current_user: User = Depends(auth_service.get_current_user)):
     """
@@ -35,7 +36,7 @@ async def read_contacts(birthdays: bool, skip: int = 0, limit: int = 100, db: Se
     else:
         return contacts_all
 
-@router.get("/{contact_id}", response_model=ContactResponse, dependencies=[Depends(RateLimiter(times=1, seconds=20))])
+@router.get("/{contact_id}", response_model=ContactResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def read_contact(contact_id: int, db: Session = Depends(get_db),
                     current_user: User = Depends(auth_service.get_current_user)):
     """
@@ -52,7 +53,7 @@ async def read_contact(contact_id: int, db: Session = Depends(get_db),
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return contact
 
-@router.get("/contact/", response_model=ContactResponse, dependencies=[Depends(RateLimiter(times=1, seconds=20))])
+@router.get("/contact/", response_model=ContactResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def read_contact(name: str| None=None, surname:  str| None=None, email_address: str| None=None,
                      phone_number: str| None=None, db: Session = Depends(get_db),
                      current_user: User = Depends(auth_service.get_current_user)):
@@ -77,8 +78,7 @@ async def read_contact(name: str| None=None, surname:  str| None=None, email_add
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return contact
 
-@router.post("/", response_model=ContactResponse, status_code=status.HTTP_201_CREATED, 
-             dependencies=[Depends(RateLimiter(times=1, seconds=20))])
+@router.post("/", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
 async def create_contact(body: ContactBase, db: Session = Depends(get_db),
                       current_user: User = Depends(auth_service.get_current_user)):
     """
@@ -93,7 +93,7 @@ async def create_contact(body: ContactBase, db: Session = Depends(get_db),
     return await repository_users.create_contact(body, current_user, db)
 
 
-@router.put("/{contact_id}", response_model=ContactResponse, dependencies=[Depends(RateLimiter(times=1, seconds=20))])
+@router.put("/{contact_id}", response_model=ContactResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def update_contact(body: ContactBase, contact_id: int, db: Session = Depends(get_db),
                       current_user: User = Depends(auth_service.get_current_user)):
     """
@@ -145,7 +145,7 @@ async def remove_contact(contact_id: int, db: Session = Depends(get_db),
     param db: The database session
     type: Session
     """
-    contact = await repository_users.remove_user(contact_id, current_user, db)
+    contact = await repository_users.remove_contact(contact_id, current_user, db)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return contact

@@ -46,7 +46,7 @@ async def create_user(body: UserModel, db: Session) -> User:
         avatar = g.get_image()
     except Exception as e:
         print(e)
-    new_user = User(**body.dict(), avatar=avatar)
+    new_user = User(**body.model_dump(), avatar=avatar)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -104,12 +104,12 @@ async def get_contacts_birthdays(skip: int, limit: int, user: User, db: Session,
     :param db: The database session.
     :type db: Session
     """
-    users = db.query(Contact).filter(Contact.user_id==user.id).offset(skip).limit(limit).all()
+    contacts = db.query(Contact).filter(Contact.user_id==user.id).offset(skip).limit(limit).all()
     now = dtdt.today().date()
     birthdays = []
-    for user in users:
-        date_user = user.date_of_birth
-        week_day = date_user.isoweekday()
+    for contact in contacts:
+        date_user = contact.date_of_birth
+        # week_day = date_user.isoweekday()
         difference_day = (date_user.day - now.day)
         if 0 <= difference_day < 7 :
             if difference_day < 6 :
@@ -121,17 +121,17 @@ async def get_contacts_birthdays(skip: int, limit: int, user: User, db: Session,
                     birthdays.append(user)
     return birthdays
         
-async def get_contact(user_id: int, user:User, db: Session) -> User:
+async def get_contact(contact_id: int, user:User, db: Session) -> User:
     """
     Search the contact by its id.
-    :param user_id: id contact.
-    :type user_id: int
+    :param contact_id: id contact.
+    :type contact_id: int
     :param user: User.
     :type user: str
     :param db: The database session.
     :type db: Session
     """
-    return db.query(Contact).filter(Contact.user_id==user.id).filter(Contact.id == user_id).first()
+    return db.query(Contact).filter(Contact.user_id==user.id).filter(Contact.id == contact_id).first()
 
 async def get_contact_name(name: str, surname:str, email_address:str, phone_number: str, user:User, db: Session) -> Contact:
     """
@@ -169,13 +169,36 @@ async def create_contact(body: ContactBase, user:User, db: Session) -> Contact:
     :param db: The database session.
     :type db: Session
     """
-    user = Contact(name=body.name, surname=body.surname, email_address=body.email_address,
+    contact = Contact(name=body.name, surname=body.surname, email_address=body.email_address,
                     phone_number=body.phone_number, date_of_birth = body.date_of_birth,
                       additional_data = body.additional_data, user_id=user.id)
-    db.add(user)
+    db.add(contact)
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(contact)
+    return contact
+
+async def update_contact(contact_id: int, body: ContactBase, user:User, db: Session) -> Contact:
+    """
+    Update a contact.
+    :param contact_id: contact id.
+    :type contact_id: int
+    :param body: contact details.
+    :type body: str
+    :param user: User.
+    :type user: str
+    :param db: The database session.
+    :type db: Session
+    """
+    contact = db.query(Contact).filter(Contact.id == contact_id).filter(Contact.user_id==user.id).first()
+    if contact:
+        contact.name = body.name
+        contact.surname = body.surname
+        contact.email_address = body.email_address
+        contact.phone_number = body.phone_number
+        contact.date_of_birth = body.date_of_birth
+        contact.additional_data = body.additional_data
+        db.commit()
+    return contact
 
 async def remove_contact(contact_id: int, user:User, db: Session) -> Contact | None:
     """
@@ -193,45 +216,20 @@ async def remove_contact(contact_id: int, user:User, db: Session) -> Contact | N
         db.commit()
     return contact
 
-
-async def update_contact(contact_id: int, body: ContactBase, user:User, db: Session) -> Contact | None:
-    """
-    Update a contact.
-    :param contact_id: contact id.
-    :type contact_id: int
-    :param body: contact details.
-    :type body: str
-    :param user: User.
-    :type user: str
-    :param db: The database session.
-    :type db: Session
-    """
-    user = db.query(Contact).filter(Contact.user_id==user.id).filter(Contact.id == contact_id).first()
-    if user:
-        user.name = body.name
-        user.surname = body.surname
-        user.email_address = body.email_address
-        user.phone_number = body.phone_number
-        user.date_of_birth = body.date_of_birth
-        user.additional_data = body.additional_data
-        db.commit()
-    return user
-
-
-async def update_status_user(user_id: int, body: ContactStatusUpdate, user:User, db: Session) -> Contact | None:
+async def update_status_contact(contact_id: int, body: ContactStatusUpdate, user:User, db: Session) -> Contact | None:
     """
     Update status user.
-    :param user_id: user id.
-    :type user_id: int
-    :param body: User status.
+    :param contact_id: contact id.
+    :type contact_id: int
+    :param body: contact status.
     :type body: bool
     :param user: User.
     :type user: str
     :param db: The database session.
     :type db: Session
     """
-    user = db.query(Contact).filter(Contact.user_id==user.id).filter(Contact.id == user_id).first()
-    if user:
-        user.done = body.done
+    contact = db.query(Contact).filter(Contact.user_id==user.id).filter(Contact.id == contact_id).first()
+    if contact:
+        contact.done = body.done
         db.commit()
-    return user
+    return contact
