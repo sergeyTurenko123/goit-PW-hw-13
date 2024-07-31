@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, func, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime, Date
 from sqlalchemy.orm import declarative_base
-# from sqlalchemy.ext.declarative import declarative_base
 from .db import engine
 
 Base = declarative_base()
